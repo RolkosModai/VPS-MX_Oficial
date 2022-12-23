@@ -19,7 +19,7 @@ USRdatacredi="/etc/BOT-C2/creditos"
 
 ##### SERVIDOR TELEGRAM PERSONAL
 [[ $(dpkg --get-selections|grep -w "jq"|head -1) ]] || apt-get install jq -y &>/dev/null
-[[ ! -e "/bin/ShellBot.sh" ]] && wget -O /bin/ShellBot.sh https://raw.githubusercontent.com/lacasitamx/BOT/master/ShellBot.sh &> /dev/null
+[[ ! -e "/bin/ShellBot.sh" ]] && wget -O /bin/ShellBot.sh https://raw.githubusercontent.com/NetVPS/VPS-MX_Oficial/master/LINKS-LIBRERIAS/ShellBot.sh &> /dev/null
 [[ -e /etc/texto-bot ]] && rm /etc/texto-bot
 
 ##### VERIFICANDO  PAQUETES PRIMARIOS
@@ -30,15 +30,31 @@ USRdatacredi="/etc/BOT-C2/creditos"
 [[ $(dpkg --get-selections|grep -w "nmap"|head -1) ]] || apt-get install nmap -y &>/dev/null
 
 ## INGRESO DE TOKEN BOT
-id="$1"
-[[ -z $1 ]] && exit
-TOKEN="$2"
+clear
+msg -bar
+msg -tit
+msg -ama "      ## BOT DE GESTION | VPS-MX By @Kalix1 ## \033[1;31m"
+msg -bar
+if [[ $1 = "id" || -z $(ps aux |grep -v grep |grep -w "ADMbot.sh"|grep dmS|awk '{print $2}') ]]; then
+[[ -z $2 ]] && echo -ne "\033[1;96m #Digite el Token del BOT\033[0;92m\nTOKEN: \033[0;97m" && read TOKEN || TOKEN="$2"
 [[ -z "$TOKEN" ]] && exit 1 #SEM TOKEN, SEM BOT
 IDIOMA="$(cat ${SCPidioma})" && [[ -z $IDIOMA ]] && IDIOMA="es" #ARGUMENTO 2 (IDIOMA)
-USERLIB="$3"
+[[ -z $3 ]] && echo -ne "\033[1;96m #Digite un nombre para su Usuario\033[0;92m \nUSUARIO: \033[0;97m" && read USERLIB || USERLIB="$3"
 [[ -z "$USERLIB" ]] && exit 1 #USUARIO
-PASSLIB="$4"
+[[ -z $4 ]] && echo -ne "\033[1;96m #Digite una contraseña para su Usuario\033[0;92m \nCONTRASEÑA: \033[0;97m" && read PASSLIB || PASSLIB="$4"
 [[ -z "$PASSLIB" ]] && exit 1 #SENHA
+[[ -z $2 ]] && [[ -z $3 ]] && [[ -z $4 ]] && {
+screen -dmS telebot ${SCPfrm}/ADMbot.sh id "$TOKEN" "$USERLIB" "$PASSLIB"
+msg -bar
+echo -e "\033[1;92m                BOT INICIADO CON EXCITO"
+msg -bar
+exit 0
+}
+else
+kill -9 $(ps aux |grep -v grep |grep -w "ADMbot.sh"|grep dmS|awk '{print $2}') && echo -e "\033[1;91m                BOT DETENIDO CON EXCITO"
+msg -bar
+exit 0
+fi
 LINE='━━━━━━━━━━━━━━━━━━━━'
 USRdatabase="/etc/VPS-MX/VPS-MXuser"
 #IMPORTANDO API
@@ -116,8 +132,11 @@ add_user () {
 #nome senha Dias limite
 [[ $(cat /etc/passwd |grep $1: |grep -vi [a-z]$1 |grep -v [0-9]$1 > /dev/null) ]] && return 1
 valid=$(date '+%C%y-%m-%d' -d " +$3 days") && datexp=$(date "+%F" -d " + $3 days")
-useradd -M -s /bin/false -e ${valid} -K PASS_MAX_DAYS=$3 -p $(openssl passwd -1 $2) -c ssh,$2 $1
-#   echo "$1|$2|${valid}|$4" >> ${USRdatabase}
+useradd -M -s /bin/false $1 -e ${valid} > /dev/null 2>&1 || return 1
+(echo $2; echo $2)|passwd $1 2>/dev/null || {
+    userdel --force $1
+    return 1
+    }
 [[ -e ${USRdatabase} ]] && {
    newbase=$(cat ${USRdatabase}|grep -w -v "$1")
    echo "$1|$2|${datexp}|$4" > ${USRdatabase}
@@ -296,8 +315,6 @@ local bot_retorno="*$LINE*\n"
 		 bot_retorno+="/bloquear -->> Bloquear Usuario\n"
 		 bot_retorno+="/desbloquear -->> Desbloquear Usuario\n"
 		 bot_retorno+="/online -->> Usuarios Online\n"
-		bot_retorno+="/backup -->> Backup-User\n"
-		bot_retorno+="/restarbackup -->> Restaurar Backup\n"
          bot_retorno+="/infovps -->> Info de Servidor\n"
 		 bot_retorno+="$LINE\n"
          bot_retorno+=" _ HERRAMIENTAS _\n"
@@ -1115,7 +1132,7 @@ if [[ $2 = "-loked" ]]; then
 [[ $(cat ${USRloked}|grep -w "$1") ]] && return 1
 echo " $1 (BLOCK-MULTILOGIN) $(date +%r--%d/%m/%y)"
 limseg="$(less /etc/VPS-MX/controlador/tiemdes.log)"
-KEY="2012880601:AAEJ3Kk18PGDzW57LpTMnVMn_pQYQKW3V9w"
+KEY="862633455:AAGJ9BBJanzV6yYwLSemNAZAVwn7EyjrtcY"
 URL="https://api.telegram.org/bot$KEY/sendMessage"
 MSG="⚠️ AVISO DE VPS: $NOM1 ⚠️
 🔹 CUENTA: $1 
@@ -1228,50 +1245,6 @@ local bot_retorno="*$LINE*\n"
 								 						 
 	return 0
 }
-backups(){
-[[ ! -z ${callback_query_message_chat_id[$id]} ]] && var=${callback_query_message_chat_id[$id]} || var=${message_chat_id[$id]}
-local bot_retorno="$LINE\n"
-bot_retorno+="ᨉBACKUP DE USUARIOSᨉ\n"
-bot_retorno+="$LINE\n"
-ShellBot.sendMessage --chat_id $var \
-							--text "*$(echo -e $bot_retorno)*" \
-							--parse_mode markdown
-cp ${USRdatabase} $HOME/VPS-MX-Backup-User
-						ShellBot.sendDocument --chat_id $var \
-                             --document @$HOME/VPS-MX-Backup-User
-
-#rm $HOME/VPS-MX-Backup
-return 0
-}
-
-restabackup(){
-dirbackup="/root/VPS-MX-Backup-User"
-local msj
-VPSsec=$(date +%s)
-while read line; do
-nome=$(echo ${line}|cut -d'|' -f1)
-[[ $(echo $(mostrar_usuarios)|grep -w "$nome") ]] && { msj="$nome [ERROR]\n"
-[[ ! -z ${callback_query_message_chat_id[$id]} ]] && var=${callback_query_message_chat_id[$id]} || var=${message_chat_id[$id]}
-ShellBot.sendMessage --chat_id $var \
-							--text "*$(echo -e $msj)*" \
-							--parse_mode markdown
-  continue
-  }
-  
-senha=$(echo ${line}|cut -d'|' -f2)
-DateExp=$(echo ${line}|cut -d'|' -f3)
-DataSec=$(date +%s --date="$DateExp")
-[[ "$VPSsec" -lt "$DataSec" ]] && dias="$(($(($DataSec - $VPSsec)) / 86400))" || dias="NP"
-limite=$(echo ${line}|cut -d'|' -f4)
-
-add_user "$nome" "$senha" "$dias" "$limite" &>/dev/null && msj="$nome [CUENTA VALIDA]\n" || msj="$nome [CUENTA INVALIDA FECHA EXPIRADA]\n"
-[[ ! -z ${callback_query_message_chat_id[$id]} ]] && var=${callback_query_message_chat_id[$id]} || var=${message_chat_id[$id]}
-ShellBot.sendMessage --chat_id $var \
-							--text "*$(echo -e $msj)*" \
-							--parse_mode markdown
-done < ${dirbackup}
-return 0
-}
 
 
 # LOOP ESCUTANDO O TELEGRAN
@@ -1303,8 +1276,6 @@ while true; do
 			 ##HERRAMIENTAS
              [Aa]dmins|/[Aa]dmins)loguin_fun &;;
              [Ii]nfovps|/[Ii]nfovps)infovps &;;
-             [Bb]ackup|/[Bb]ackup)backups &;;
-             [Rr]estarbackup|/[Rr]estarbackup)restabackup &;;
              [Ll]ang|/[Ll]ang)language_fun "${comando[@]}" &;;
              [Oo]penadd|/[Oo]penadd|[Oo]pen|/[Oo]pen)openadd_fun "${comando[1]}" "${comando[2]}" &;;
              [Gg]erar|/[Gg]erar|[Pp]ay|/[Pp]ay)paygen_fun "${comando[1]}" "${comando[2]}" "${comando[3]}" &;;
