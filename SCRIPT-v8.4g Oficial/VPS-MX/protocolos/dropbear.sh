@@ -84,7 +84,7 @@ fun_dropbear () {
  }
 msg -bar
 msg -tit
-echo -e "\033[1;32m $(fun_trans "   INSTALADOR DROPBEAR")"
+echo -e "\033[1;32m $(fun_trans "   INSTALADOR DROPBEAR | VPS-MX By @Kalix1")"
 msg -bar
 echo -e "\033[1;31m $(fun_trans "Seleccione Puertos Validados en orden secuencial:\n")\033[1;32m 22 80 81 82 85 90\033[1;37m"
 msg -bar
@@ -196,7 +196,7 @@ sed -i "s/VAR/-p $dpts VAR/g" /etc/default/dropbear
 done
 sed -i "s/VAR//g" /etc/default/dropbear
 }
-fun_eth &>/dev/null
+fun_eth
 service ssh restart > /dev/null 2>&1
 service dropbear restart > /dev/null 2>&1
 echo -e "${cor[3]} $(fun_trans "Su dropbear ha sido configurado con EXITO")"
